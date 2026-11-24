@@ -1,0 +1,93 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "localsend",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "app",
+            "cwd": "app",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "app (profile mode)",
+            "cwd": "app",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "app (release mode)",
+            "cwd": "app",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "localsend_isolates",
+            "cwd": "packages/localsend_isolates",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "localsend_isolates (profile mode)",
+            "cwd": "packages/localsend_isolates",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "localsend_isolates (release mode)",
+            "cwd": "packages/localsend_isolates",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "typed_isolates",
+            "cwd": "packages/typed_isolates",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "rust_builder",
+            "cwd": "packages/localsend_isolates/rust_builder",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "rust_builder (profile mode)",
+            "cwd": "packages/localsend_isolates/rust_builder",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "rust_builder (release mode)",
+            "cwd": "packages/localsend_isolates/rust_builder",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        },
+        {
+            "name": "flutter",
+            "cwd": "support/submodules/flutter",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "LocalSend Android",
+            "type": "dart",
+            "request": "launch",
+            "cwd": "${workspaceFolder}/app",
+            "program": "${workspaceFolder}/app/lib/main.dart",
+            "flutterMode": "debug"
+        }
+    ]
+}

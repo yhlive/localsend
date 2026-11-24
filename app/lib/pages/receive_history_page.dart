@@ -26,8 +26,7 @@ enum _EntryOption {
   open,
   showInFolder,
   info,
-  delete
-  ;
+  delete;
 
   String get label {
     return switch (this) {
@@ -42,8 +41,23 @@ enum _EntryOption {
 const _optionsAll = _EntryOption.values;
 final _optionsWithoutOpen = [_EntryOption.info, _EntryOption.delete];
 
-class ReceiveHistoryPage extends StatelessWidget {
+class ReceiveHistoryPage extends StatefulWidget {
   const ReceiveHistoryPage({super.key});
+
+  @override
+  State<ReceiveHistoryPage> createState() => _ReceiveHistoryPageState();
+}
+
+class _ReceiveHistoryPageState extends State<ReceiveHistoryPage> {
+  bool _oldestFirst = false;
+  String _query = '';
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   Future<void> _openFile(
     BuildContext context,
@@ -63,14 +77,43 @@ class ReceiveHistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entries = context.watch(receiveHistoryProvider);
-
+    final nameCounts = <String, int>{};
+    for (final entry in entries) {
+      if (entry.isMessage) continue;
+      final name = entry.fileName;
+      nameCounts[name] = (nameCounts[name] ?? 0) + 1;
+    }
+    final orderedEntries = _oldestFirst ? entries.reversed : entries;
+    final filteredEntries = orderedEntries
+        .where(
+          (entry) => entry.fileName.toLowerCase().contains(_query.toLowerCase()) || entry.senderAlias.toLowerCase().contains(_query.toLowerCase()),
+        )
+        .toList();
     return Scaffold(
       appBar: AppBar(
         title: Text(t.receiveHistoryPage.title),
+        actions: [
+          IconButton(
+            onPressed: entries.length < 2
+                ? null
+                : () {
+                    setState(() {
+                      _oldestFirst = !_oldestFirst;
+                    });
+                  },
+            icon: const Icon(Icons.swap_vert),
+            tooltip: _oldestFirst ? 'Show newest first' : 'Show oldest first',
+          ),
+        ],
       ),
       body: ResponsiveListView(
         padding: const EdgeInsets.symmetric(vertical: 20),
         children: [
+          if (_query.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(15, 0, 15, 12),
+              child: Text('Matches: ${filteredEntries.length}'),
+            ),
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -116,13 +159,41 @@ class ReceiveHistoryPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 15),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search by name or sender',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchController.text.isEmpty
+                    ? null
+                    : IconButton(
+                        tooltip: 'Clear search',
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() => _query = '');
+                        },
+                      ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _query = value;
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 20),
           if (entries.isEmpty)
             Padding(
               padding: const EdgeInsets.only(top: 100),
               child: Center(child: Text(t.receiveHistoryPage.empty, style: Theme.of(context).textTheme.headlineMedium)),
             )
+          else if (filteredEntries.isEmpty)
+            const Center(child: Text('No matching entries found.'))
           else
-            ...entries.map((entry) {
+            ...filteredEntries.map((entry) {
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                 child: InkWell(
@@ -167,7 +238,7 @@ class ReceiveHistoryPage extends StatelessWidget {
                         }
                       : null,
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       FilePathThumbnail(
                         path: entry.path,
@@ -178,7 +249,6 @@ class ReceiveHistoryPage extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const SizedBox(height: 3),
                             Text(
                               entry.fileName,
                               style: const TextStyle(fontSize: 16),
@@ -187,12 +257,46 @@ class ReceiveHistoryPage extends StatelessWidget {
                               softWrap: false,
                             ),
                             Text(
-                              '${entry.timestampString(context)} - ${entry.fileSize.asReadableFileSize} - ${entry.senderAlias}',
-                              maxLines: 1,
-                              overflow: TextOverflow.fade,
-                              softWrap: false,
+                              '${entry.timestampString(context)} - ${entry.fileSize.asReadableFileSize} \n'
+                              '${entry.senderAlias}',
                               style: const TextStyle(color: Colors.grey),
                             ),
+                            if (!entry.isMessage && (nameCounts[entry.fileName] ?? 0) > 1)
+                              TextButton(
+                                child: Text('Compare ${nameCounts[entry.fileName]} receipts'),
+                                onPressed: () async {
+                                  final receipts = orderedEntries
+                                      .where(
+                                        (item) => !item.isMessage && item.fileName == entry.fileName,
+                                      )
+                                      .toList();
+
+                                  await showModalBottomSheet<void>(
+                                    context: context,
+                                    builder: (_) => SafeArea(
+                                      child: ListView(
+                                        shrinkWrap: true,
+                                        padding: const EdgeInsets.all(16),
+                                        children: [
+                                          Text(
+                                            entry.fileName,
+                                            style: Theme.of(context).textTheme.titleLarge,
+                                          ),
+                                          for (final receipt in receipts)
+                                            ListTile(
+                                              title: Text(receipt.timestampString(context)),
+                                              subtitle: Text(
+                                                '${receipt.timestampString(context)} - ${receipt.fileSize.asReadableFileSize} \n'
+                                                '${receipt.senderAlias}',
+                                                style: const TextStyle(color: Colors.grey),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
                           ],
                         ),
                       ),

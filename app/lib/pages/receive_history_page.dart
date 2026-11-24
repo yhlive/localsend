@@ -21,13 +21,13 @@ import 'package:localsend_isolates/util/file_size_helper.dart';
 import 'package:path/path.dart' as path;
 import 'package:refena_flutter/refena_flutter.dart';
 import 'package:routerino/routerino.dart';
+import 'package:flutter/services.dart';
 
 enum _EntryOption {
   open,
   showInFolder,
   info,
-  delete
-  ;
+  delete;
 
   String get label {
     return switch (this) {
@@ -63,10 +63,29 @@ class ReceiveHistoryPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entries = context.watch(receiveHistoryProvider);
+    final fileNames = entries.where((entry) => !entry.isMessage).map((entry) => entry.fileName).toList();
 
     return Scaffold(
       appBar: AppBar(
         title: Text(t.receiveHistoryPage.title),
+        actions: [
+          IconButton(
+            tooltip: 'Copy received file names',
+            icon: const Icon(Icons.copy_outlined),
+            onPressed: fileNames.isEmpty
+                ? null
+                : () async {
+                    await Clipboard.setData(ClipboardData(text: fileNames.join('\n')));
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Copied ${fileNames.length} file names to clipboard'),
+                        ),
+                      );
+                    }
+                  },
+          ),
+        ],
       ),
       body: ResponsiveListView(
         padding: const EdgeInsets.symmetric(vertical: 20),
